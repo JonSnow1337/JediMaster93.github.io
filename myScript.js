@@ -119,23 +119,24 @@ function gameOfLifeLoop() {
         }
     }
     for (var i = 0; i < cellsToDie.length; i++) {
-        console.log(i + "," + i + "dies")
         cellsToDie[i].checked = false;
         cellsToDie[i].draw()
 
-
     }
     for (var i = 0; i < cellsToReproduce.length; i++) {
-        console.log(i + "," + i + "respawns")
-
+ 
         cellsToReproduce[i].checked = true;
         cellsToReproduce[i].draw()
+        polySynth.triggerAttackRelease((cellsToReproduce[i].x * cellsToReproduce[i].y % 1001) ,"16n")
+
     }
     drawGrid();
     myContext.stroke();
 }
 
- 
+var polySynth = new Tone.PolySynth(4, Tone.Synth).toMaster();
+
+
 var myCanvas = document.getElementById("canvas");
 var myContext = myCanvas.getContext("2d");
 
@@ -161,7 +162,6 @@ for (var i = 0; i < grid.length; i++) {
     }
 }
 myCanvas.addEventListener('mousedown', function (evt) {
-    console.log("mouse down")
     var mousePos = getMousePos(canvas, evt);
     var rect = grid[Math.floor(mousePos.x / RECT_WIDTH)][Math.floor(mousePos.y / RECT_HEIGHT)]
     rect.onclick()
@@ -172,6 +172,6 @@ myCanvas.addEventListener('mousedown', function (evt) {
  /* to use */
 var buttonStart = document.getElementById("btnStart")
 var buttonPause = document.getElementById("btnPause")
-buttonStart.onclick = function () { intervalRef = setInterval(gameOfLifeLoop, 1000) }
+buttonStart.onclick = function () { intervalRef = setInterval(gameOfLifeLoop, 100) }
 drawGrid();
 myContext.stroke();
