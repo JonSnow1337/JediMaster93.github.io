@@ -15,7 +15,7 @@ class Rectangle {
             //clear previous filled rect
             this.context.fillStyle = "#FFFFFF"
             this.context.fillRect(this.x, this.y, RECT_HEIGHT, RECT_WIDTH)
-         }
+        }
     }
     onclick() {
         if (this.checked) {
@@ -37,7 +37,7 @@ function drawGrid() {
     for (var i = 0; i < grid.length; i++) {
         for (var j = 0; j < grid.length; j++) {
             myContext.rect(i * RECT_HEIGHT, j * RECT_WIDTH, RECT_HEIGHT, RECT_WIDTH);
-         }
+        }
     }
 }
 function getMousePos(canvas, evt) {
@@ -124,23 +124,79 @@ function gameOfLifeLoop() {
 
     }
     for (var i = 0; i < cellsToReproduce.length; i++) {
- 
+
         cellsToReproduce[i].checked = true;
         cellsToReproduce[i].draw()
-        polySynth.triggerAttackRelease((cellsToReproduce[i].x * cellsToReproduce[i].y % 1001) ,"16n")
 
+        playNote(cellsToReproduce[i].x,cellsToReproduce[i].y)
     }
-  //  myContext.clearRect(0,0,myCanvas.width,myCanvas.height)
+    //  myContext.clearRect(0,0,myCanvas.width,myCanvas.height)
     myContext.beginPath();
     drawGrid();
     myContext.stroke();
 }
+function generateNoteScale(baseSteps, octaves) {
+    //generates notes and octaves based on stuff
+    //starts from C0(16.35)
+    let notes = []
+    let baseNotes = []
+    let allNotes = []
+    //this calculates first 12 notes with halfpitches and everyyhing
+    for (var i = 0; i < 12; i++) {
+        notes.push(16.35 * Math.pow(Math.pow(2, 1 / 12), i))
+    }
+    //var cmajBaseSteps = [0,2,4,5,7,9,11]
+    //this removes pitches that are not in steps(scale)
+    for (var i = 0; i < notes.length; i++) {
+        if (baseSteps.includes(i)) {
+            baseNotes.push(notes[i])
+        }
+    }
+    //this generates octaves from baseNotes
+    var octaves = 5;
+    for (var i = 0; i < octaves; i++) {
+        for (var j = 0; j < baseSteps.length; j++) {
+            allNotes.push(baseNotes[j] * Math.pow(2, i + 1))
 
-var polySynth = new Tone.PolySynth(4, Tone.Synth).toMaster();
+        }
+    }
+    return allNotes
 
+}
+function getNearestFromArray(input, array) {
+    let delta = 0;
+    let prevDelta = 0;
+    for (var i = 0; i < array.length; i++) {
+        delta = Math.abs(input - array[i])
+        if (i == 0) {
+            prevDelta = delta
+            continue
+        }
+        if (prevDelta < delta) {
+            return array[i - 1]
+        }
+        prevDelta = delta
+
+    }
+}
+function playNote(x,y){
+    //plays note based on x/y values of canvas
+        let val = x * y
+        //normalise value
+        val = val / (myCanvas.width * myCanvas.height)
+        //i wanna have notes in 0-1000 range so i multipy normalised by 1000
+        let note = val * 1000
+       // console.log(note)
+        note = getNearestFromArray(note, scale)
+        polySynth.triggerAttackRelease((note), NOTE_DURATION_SEC)
+}
+
+var polySynth = new Tone.PolySynth(50, Tone.Synth).toMaster();
+polySynth.volume.value = -15
 
 var myCanvas = document.getElementById("canvas");
 var myContext = myCanvas.getContext("2d");
+var scale = generateNoteScale([0, 2, 4, 5, 7, 9, 11], 5)
 
 var RECT_WIDTH = 30
 var RECT_HEIGHT = RECT_WIDTH
@@ -150,6 +206,9 @@ var GRID_SIZE = 50
 var BORDER_COLOUR = "#777673" //gray
 var ALIVE_COLOUR = "#000000" //white
 var DEAD_COLOUR = "#FFFFFF" //black
+
+var INTERVAL_UPDATE_MILIS = 100
+var NOTE_DURATION_SEC = INTERVAL_UPDATE_MILIS / 1000
 
 
 var grid = Array(GRID_SIZE);
@@ -168,12 +227,24 @@ myCanvas.addEventListener('mousedown', function (evt) {
     var rect = grid[Math.floor(mousePos.x / RECT_WIDTH)][Math.floor(mousePos.y / RECT_HEIGHT)]
     rect.onclick()
     myContext.stroke()
+    playNote(rect.x,rect.y)
 }, false);
 
- 
- /* to use */
+
 var buttonStart = document.getElementById("btnStart")
 var buttonPause = document.getElementById("btnPause")
-buttonStart.onclick = function () { intervalRef = setInterval(gameOfLifeLoop, 100) }
+
+var intervalRef =0
+buttonStart.onclick = function () {
+    intervalRef = setInterval(gameOfLifeLoop, INTERVAL_UPDATE_MILIS)
+    console.log(intervalRef)
+}
+buttonPause.onclick = function () {
+   clearInterval(intervalRef)
+   console.log(intervalRef)
+
+}
+
 drawGrid();
 myContext.stroke();
+//0,2,4,5,7,9,11 these are c major scale steps starting from C
