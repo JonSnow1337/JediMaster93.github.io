@@ -130,6 +130,8 @@ function gameOfLifeLoop() {
         polySynth.triggerAttackRelease((cellsToReproduce[i].x * cellsToReproduce[i].y % 1001) ,"16n")
 
     }
+  //  myContext.clearRect(0,0,myCanvas.width,myCanvas.height)
+    myContext.beginPath();
     drawGrid();
     myContext.stroke();
 }
