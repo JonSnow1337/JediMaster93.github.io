@@ -6,16 +6,24 @@ class Rectangle {
         this.x = x
         this.y = y
         this.checked = false;
+        this.normalisedLocation = (this.x * this.y) / (myCanvas.width * myCanvas.height);
+        this.color = Please.make_color({
+            golden: true, //disable default
+            hue: 0, //set your hue manually
+            saturation: 0.5 + this.normalisedLocation,
+            value: 0.5 + this.normalisedLocation
+        });
     }
     draw() {
         if (this.checked) {
-            let normalisedPosition = ((this.x + 1) * (this.y + 1)) / (myCanvas.width * myCanvas.height)
+            /*let normalisedPosition = ((this.x + 1) * (this.y + 1)) / (myCanvas.width * myCanvas.height)
             let colourDec = Math.round(normalisedPosition * parseInt("BBBBBB", 16));
             let maxVal = parseInt("FFFFFF", 16)
             colourDec = maxVal - colourDec
             let colourHex = colourDec.toString(16).toUpperCase()
             console.log(colourHex)
-            this.context.fillStyle = "#" + colourHex
+            this.context.fillStyle = "#" + colourHex*/
+            this.context.fillStyle = this.color;
             this.context.fillRect(this.x, this.y, RECT_HEIGHT, RECT_WIDTH)
         } else {
             //clear previous filled rect
@@ -129,13 +137,17 @@ function gameOfLifeLoop() {
         cellsToDie[i].draw()
 
     }
+    let noteList = []
     for (var i = 0; i < cellsToReproduce.length; i++) {
 
         cellsToReproduce[i].checked = true;
         cellsToReproduce[i].draw()
+        note = calculateNote(cellsToReproduce[i].x, cellsToReproduce[i].y)
+        noteList.push(note)
 
-        playNote(cellsToReproduce[i].x, cellsToReproduce[i].y)
+        // playNote(cellsToReproduce[i].x, cellsToReproduce[i].y)
     }
+    polySynth.triggerAttackRelease((noteList), NOTE_DURATION_SEC)
     //  myContext.clearRect(0,0,myCanvas.width,myCanvas.height)
     myContext.beginPath();
     drawGrid();
@@ -159,7 +171,7 @@ function generateNoteScale(baseSteps, octaves) {
         }
     }
     //this generates octaves from baseNotes
-     for (var i = 0; i < octaves; i++) {
+    for (var i = 0; i < octaves; i++) {
         for (var j = 0; j < baseSteps.length; j++) {
             allNotes.push(baseNotes[j] * Math.pow(2, i + 1))
 
@@ -185,7 +197,7 @@ function getNearestFromArray(input, array) {
 
     }
 }
-function playNote(x, y) {
+function calculateNote(x, y) {
     //plays note based on x/y values of canvas
     let val = x * y
     //normalise value
@@ -194,18 +206,35 @@ function playNote(x, y) {
     let note = val * MAX_NOTE_FREQUENCY
     // console.log(note)
     note = getNearestFromArray(note, scale)
-    polySynth.triggerAttackRelease((note), NOTE_DURATION_SEC)
+    return note
+    // polySynth.triggerAttackRelease((note), NOTE_DURATION_SEC)
 }
 
 function userChangeBlock(evt) {
     var mousePos = getMousePos(myCanvas, evt);
-    var rect = grid[Math.floor(mousePos.x / RECT_WIDTH)][Math.floor(mousePos.y / RECT_HEIGHT)]
-    rect.onclick()
-    myContext.stroke()
-    playNote(rect.x, rect.y)
+    let x = Math.floor(mousePos.x / RECT_WIDTH)
+    let y = Math.floor(mousePos.y / RECT_HEIGHT)
+    if(x <GRID_SIZE && y < GRID_SIZE){
+    var rect = grid[x][y]
+        rect.onclick()
+        myContext.stroke()
+        polySynth.triggerAttackRelease(calculateNote(rect.x, rect.y), NOTE_DURATION_SEC)
+
+    }
+
 
 }
-var polySynth = new Tone.PolySynth(50, Tone.Synth).toMaster();
+
+function setIntervalUpdateTime(milis){
+      INTERVAL_UPDATE_MILIS = milis
+      NOTE_DURATION_SEC = INTERVAL_UPDATE_MILIS / 1000
+
+    clearInterval(intervalRef)
+    intervalRef = setInterval(gameOfLifeLoop, INTERVAL_UPDATE_MILIS)
+
+
+}
+var polySynth = new Tone.PolySynth(1000, Tone.Synth).toMaster();
 polySynth.volume.value = -15
 
 var myCanvas = document.getElementById("canvas");
@@ -214,7 +243,7 @@ var scale = generateNoteScale([0, 2, 4, 5, 7, 9, 11], 8)
 
 var RECT_WIDTH = 30
 var RECT_HEIGHT = RECT_WIDTH
-var GRID_SIZE = 50
+var GRID_SIZE = Math.min(Math.floor(myCanvas.width / RECT_HEIGHT),Math.floor(myCanvas.height / RECT_HEIGHT))
 var MAX_NOTE_FREQUENCY = 1500
 var step = {
     "c": 0,
@@ -242,7 +271,7 @@ var NOTE_DURATION_SEC = INTERVAL_UPDATE_MILIS / 1000
 
 
 var grid = Array(GRID_SIZE);
-for (var i = 0; i < grid.length; i++) {
+for (var i = 0; i < GRID_SIZE; i++) {
     grid[i] = Array(GRID_SIZE);
 }
 
@@ -263,46 +292,82 @@ myCanvas.addEventListener('mousedown', function (evt) {
 
 
 }, false);
+myCanvas.addEventListener('mousewheel',function(evt){
+    if(altDown){
+        
+        setIntervalUpdateTime(INTERVAL_UPDATE_MILIS + (30 * evt.wheelDelta /Math.abs(evt.wheelDelta) ) )
+        console.log(INTERVAL_UPDATE_MILIS)
+        //console.log(evt.wheelDelta);
+
+    }
+
+});
+var altDown = false;
+window.onkeydown = function(e){
+     if(e.keyCode == 18){
+        altDown = true;
+    }
+}
+window.onkeyup = function(e){
+    if(e.keyCode == 18){
+        altDown = false;
+    }
+}
 
 
 var buttonStart = document.getElementById("btnStart")
 var buttonPause = document.getElementById("btnPause")
+var buttonSpeedUp = document.getElementById("btnSpeedUp")
+var buttonSpeedDown = document.getElementById("btnSpeedDown")
+
 var buttonCMaj = document.getElementById("btnCMaj")
 var buttonAMin = document.getElementById("btnAMin")
 var buttonFMaj = document.getElementById("btnFMaj")
 
+
 var intervalRef = 0
+var gameStarted = false;
 buttonStart.onclick = function () {
-    intervalRef = setInterval(gameOfLifeLoop, INTERVAL_UPDATE_MILIS)
-    console.log(intervalRef)
+    if (!gameStarted) {
+        intervalRef = setInterval(gameOfLifeLoop, INTERVAL_UPDATE_MILIS)
+        console.log(intervalRef)
+        gameStarted = true;
+    }
 }
 buttonPause.onclick = function () {
     clearInterval(intervalRef)
     console.log(intervalRef)
+    gameStarted = false;
+
+}
+buttonSpeedUp.onclick = function () {
+     if(INTERVAL_UPDATE_MILIS > 50){
+         setIntervalUpdateTime(INTERVAL_UPDATE_MILIS - 10 )
+document.getElementById("intervalInfo").innerHTML = "Interval Update Rate :" + INTERVAL_UPDATE_MILIS;
+
+     }
+
+}
+buttonSpeedDown.onclick = function () {
+      setIntervalUpdateTime(INTERVAL_UPDATE_MILIS + 10 )
+document.getElementById("intervalInfo").innerHTML = "Interval Update Rate :" + INTERVAL_UPDATE_MILIS;
+
 
 }
 
+ 
 buttonCMaj.onclick = function () {
-    scale = generateNoteScale([step["d"],step["fsharp"],step["a"],step["csharp"]], 5)
+    scale = generateNoteScale([step["d"], step["fsharp"], step["a"], step["csharp"]], 5)
 
 }
 buttonFMaj.onclick = function () {
-    scale = generateNoteScale([step["b"],step["d"],step["fsharp"]], 8)
+    scale = generateNoteScale([step["b"], step["d"], step["fsharp"]], 8)
 
 }
 buttonAMin.onclick = function () {
-    scale = generateNoteScale([step["e"],step["gsharp"],step["b"],step["fsharp"]], 6)
+    scale = generateNoteScale([step["e"], step["gsharp"], step["b"], step["fsharp"]], 6)
 }
 
 drawGrid();
 myContext.stroke();
-//0,2,4,5,7,9,11 these are c major scale steps starting from C
-//this produced neato colours
-   /*let normalisedPosition = ((this.x + 1) * (this.y + 1)) /(myCanvas.width * myCanvas.height)
-    let colourDec = Math.round(normalisedPosition * parseInt("BBBBBB", 16));
-    let maxVal = parseInt("FFFFFF", 16)
-    colourDec = maxVal - colourDec
-    let colourHex = colourDec.toString(16).toUpperCase()
-    console.log(colourHex)
-    this.context.fillStyle = "#" + colourHex
-    this.context.fillRect(this.x, this.y, RECT_HEIGHT, RECT_WIDTH)*/
+document.getElementById("intervalInfo").innerHTML = "Interval Update Rate :" + INTERVAL_UPDATE_MILIS;
