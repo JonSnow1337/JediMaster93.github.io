@@ -9,7 +9,13 @@ class Rectangle {
     }
     draw() {
         if (this.checked) {
-            this.context.fillStyle = ALIVE_COLOUR
+            let normalisedPosition = ((this.x + 1) * (this.y + 1)) / (myCanvas.width * myCanvas.height)
+            let colourDec = Math.round(normalisedPosition * parseInt("BBBBBB", 16));
+            let maxVal = parseInt("FFFFFF", 16)
+            colourDec = maxVal - colourDec
+            let colourHex = colourDec.toString(16).toUpperCase()
+            console.log(colourHex)
+            this.context.fillStyle = "#" + colourHex
             this.context.fillRect(this.x, this.y, RECT_HEIGHT, RECT_WIDTH)
         } else {
             //clear previous filled rect
@@ -128,7 +134,7 @@ function gameOfLifeLoop() {
         cellsToReproduce[i].checked = true;
         cellsToReproduce[i].draw()
 
-        playNote(cellsToReproduce[i].x,cellsToReproduce[i].y)
+        playNote(cellsToReproduce[i].x, cellsToReproduce[i].y)
     }
     //  myContext.clearRect(0,0,myCanvas.width,myCanvas.height)
     myContext.beginPath();
@@ -153,13 +159,13 @@ function generateNoteScale(baseSteps, octaves) {
         }
     }
     //this generates octaves from baseNotes
-    var octaves = 5;
-    for (var i = 0; i < octaves; i++) {
+     for (var i = 0; i < octaves; i++) {
         for (var j = 0; j < baseSteps.length; j++) {
             allNotes.push(baseNotes[j] * Math.pow(2, i + 1))
 
         }
     }
+    console.log(allNotes)
     return allNotes
 
 }
@@ -179,35 +185,59 @@ function getNearestFromArray(input, array) {
 
     }
 }
-function playNote(x,y){
+function playNote(x, y) {
     //plays note based on x/y values of canvas
-        let val = x * y
-        //normalise value
-        val = val / (myCanvas.width * myCanvas.height)
-        //i wanna have notes in 0-1000 range so i multipy normalised by 1000
-        let note = val * 1000
-       // console.log(note)
-        note = getNearestFromArray(note, scale)
-        polySynth.triggerAttackRelease((note), NOTE_DURATION_SEC)
+    let val = x * y
+    //normalise value
+    val = val / (myCanvas.width * myCanvas.height)
+    //i wanna have notes in 0-1000 range so i multipy normalised by 1000
+    let note = val * MAX_NOTE_FREQUENCY
+    // console.log(note)
+    note = getNearestFromArray(note, scale)
+    polySynth.triggerAttackRelease((note), NOTE_DURATION_SEC)
 }
 
+function userChangeBlock(evt) {
+    var mousePos = getMousePos(myCanvas, evt);
+    var rect = grid[Math.floor(mousePos.x / RECT_WIDTH)][Math.floor(mousePos.y / RECT_HEIGHT)]
+    rect.onclick()
+    myContext.stroke()
+    playNote(rect.x, rect.y)
+
+}
 var polySynth = new Tone.PolySynth(50, Tone.Synth).toMaster();
 polySynth.volume.value = -15
 
 var myCanvas = document.getElementById("canvas");
 var myContext = myCanvas.getContext("2d");
-var scale = generateNoteScale([0, 2, 4, 5, 7, 9, 11], 5)
+var scale = generateNoteScale([0, 2, 4, 5, 7, 9, 11], 8)
 
 var RECT_WIDTH = 30
 var RECT_HEIGHT = RECT_WIDTH
 var GRID_SIZE = 50
+var MAX_NOTE_FREQUENCY = 1500
+var step = {
+    "c": 0,
+    "csharp": 1,
+    "d": 2,
+    "dsharp": 3,
+    "e": 4,
+    "f": 5,
+    "g": 6,
+    "gsharp": 7,
+    "a": 8,
+    "asharp": 9,
+    "b": 10
+
+
+}
 
 
 var BORDER_COLOUR = "#777673" //gray
 var ALIVE_COLOUR = "#000000" //white
 var DEAD_COLOUR = "#FFFFFF" //black
 
-var INTERVAL_UPDATE_MILIS = 100
+var INTERVAL_UPDATE_MILIS = 500
 var NOTE_DURATION_SEC = INTERVAL_UPDATE_MILIS / 1000
 
 
@@ -222,29 +252,57 @@ for (var i = 0; i < grid.length; i++) {
         grid[i][j] = new Rectangle(myContext, i * RECT_WIDTH, j * RECT_HEIGHT)
     }
 }
+myCanvas.addEventListener('mousemove', function (evt) {
+    if (evt.which == 1) {
+        userChangeBlock(evt)
+    }
+
+}, false);
 myCanvas.addEventListener('mousedown', function (evt) {
-    var mousePos = getMousePos(canvas, evt);
-    var rect = grid[Math.floor(mousePos.x / RECT_WIDTH)][Math.floor(mousePos.y / RECT_HEIGHT)]
-    rect.onclick()
-    myContext.stroke()
-    playNote(rect.x,rect.y)
+    userChangeBlock(evt)
+
+
 }, false);
 
 
 var buttonStart = document.getElementById("btnStart")
 var buttonPause = document.getElementById("btnPause")
+var buttonCMaj = document.getElementById("btnCMaj")
+var buttonAMin = document.getElementById("btnAMin")
+var buttonFMaj = document.getElementById("btnFMaj")
 
-var intervalRef =0
+var intervalRef = 0
 buttonStart.onclick = function () {
     intervalRef = setInterval(gameOfLifeLoop, INTERVAL_UPDATE_MILIS)
     console.log(intervalRef)
 }
 buttonPause.onclick = function () {
-   clearInterval(intervalRef)
-   console.log(intervalRef)
+    clearInterval(intervalRef)
+    console.log(intervalRef)
 
+}
+
+buttonCMaj.onclick = function () {
+    scale = generateNoteScale([step["d"],step["fsharp"],step["a"],step["csharp"]], 5)
+
+}
+buttonFMaj.onclick = function () {
+    scale = generateNoteScale([step["b"],step["d"],step["fsharp"]], 8)
+
+}
+buttonAMin.onclick = function () {
+    scale = generateNoteScale([step["e"],step["gsharp"],step["b"],step["fsharp"]], 6)
 }
 
 drawGrid();
 myContext.stroke();
 //0,2,4,5,7,9,11 these are c major scale steps starting from C
+//this produced neato colours
+   /*let normalisedPosition = ((this.x + 1) * (this.y + 1)) /(myCanvas.width * myCanvas.height)
+    let colourDec = Math.round(normalisedPosition * parseInt("BBBBBB", 16));
+    let maxVal = parseInt("FFFFFF", 16)
+    colourDec = maxVal - colourDec
+    let colourHex = colourDec.toString(16).toUpperCase()
+    console.log(colourHex)
+    this.context.fillStyle = "#" + colourHex
+    this.context.fillRect(this.x, this.y, RECT_HEIGHT, RECT_WIDTH)*/
