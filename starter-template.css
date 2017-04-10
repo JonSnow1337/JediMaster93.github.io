@@ -1,0 +1,38 @@
+ 
+
+body {
+  color: #555;
+  padding-top: 50px;
+
+}
+canvas{
+  margin-top:50px;
+}
+
+h1, .h1,
+h2, .h2,
+h3, .h3,
+h4, .h4,
+h5, .h5,
+h6, .h6 {
+  margin-top: 0;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: normal;
+  color: #333;
+}
+
+.mything{
+
+  padding-right: 10%;
+  padding-left: 10%;
+
+
+}
+.footer {
+   /* Set the fixed height of the footer here */
+   width: 100%;
+  height: 60px;
+  line-height: 60px; /* Vertically center the text there */
+  background-color: #f5f5f5;
+}
+

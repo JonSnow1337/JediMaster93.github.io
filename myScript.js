@@ -49,7 +49,7 @@ class Rectangle {
 function drawGrid() {
     myContext.strokeStyle = BORDER_COLOUR
     for (var i = 0; i < grid.length; i++) {
-        for (var j = 0; j < grid.length; j++) {
+        for (var j = 0; j < grid[i].length; j++) {
             myContext.rect(i * RECT_HEIGHT, j * RECT_WIDTH, RECT_HEIGHT, RECT_WIDTH);
         }
     }
@@ -214,11 +214,12 @@ function userChangeBlock(evt) {
     var mousePos = getMousePos(myCanvas, evt);
     let x = Math.floor(mousePos.x / RECT_WIDTH)
     let y = Math.floor(mousePos.y / RECT_HEIGHT)
-    if(x <GRID_SIZE && y < GRID_SIZE){
+    if(x <GRID_SIZE_X && y < GRID_SIZE_Y){
     var rect = grid[x][y]
         rect.onclick()
         myContext.stroke()
         polySynth.triggerAttackRelease(calculateNote(rect.x, rect.y), NOTE_DURATION_SEC)
+        console.log("onclick")
 
     }
 
@@ -234,6 +235,7 @@ function setIntervalUpdateTime(milis){
 
 
 }
+
 var polySynth = new Tone.PolySynth(1000, Tone.Synth).toMaster();
 polySynth.volume.value = -15
 
@@ -241,9 +243,20 @@ var myCanvas = document.getElementById("canvas");
 var myContext = myCanvas.getContext("2d");
 var scale = generateNoteScale([0, 2, 4, 5, 7, 9, 11], 8)
 
+myContext.canvas.height = window.innerHeight - window.innerHeight * 0.3
+//myContext.canvas.width = window.innerWidth - window.innerWidth * 0.4
+
+  myContext.canvas.style.width ='100%';
+ // myContext.canvas.style.height= window.innerHeight;
+  // ...then set the internal size to match
+  myContext.canvas.width  = canvas.offsetWidth;
+//  myContext.canvas.height = canvas.offsetHeight;
+
 var RECT_WIDTH = 30
 var RECT_HEIGHT = RECT_WIDTH
-var GRID_SIZE = Math.min(Math.floor(myCanvas.width / RECT_HEIGHT),Math.floor(myCanvas.height / RECT_HEIGHT))
+//var GRID_SIZE = Math.min(Math.floor(myCanvas.width / RECT_HEIGHT),Math.floor(myCanvas.height / RECT_HEIGHT))
+var GRID_SIZE_X = Math.floor(myCanvas.width / RECT_HEIGHT)
+var GRID_SIZE_Y = Math.floor(myCanvas.height / RECT_HEIGHT)
 var MAX_NOTE_FREQUENCY = 1500
 var step = {
     "c": 0,
@@ -270,9 +283,9 @@ var INTERVAL_UPDATE_MILIS = 500
 var NOTE_DURATION_SEC = INTERVAL_UPDATE_MILIS / 1000
 
 
-var grid = Array(GRID_SIZE);
-for (var i = 0; i < GRID_SIZE; i++) {
-    grid[i] = Array(GRID_SIZE);
+var grid = Array(GRID_SIZE_X);
+for (var i = 0; i < GRID_SIZE_X; i++) {
+    grid[i] = Array(GRID_SIZE_Y);
 }
 
 
@@ -287,7 +300,7 @@ myCanvas.addEventListener('mousemove', function (evt) {
     }
 
 }, false);
-myCanvas.addEventListener('mousedown', function (evt) {
+myCanvas.addEventListener('click', function (evt) {
     userChangeBlock(evt)
 
 
@@ -320,9 +333,9 @@ var buttonPause = document.getElementById("btnPause")
 var buttonSpeedUp = document.getElementById("btnSpeedUp")
 var buttonSpeedDown = document.getElementById("btnSpeedDown")
 
-var buttonCMaj = document.getElementById("btnCMaj")
+/*var buttonCMaj = document.getElementById("btnCMaj")
 var buttonAMin = document.getElementById("btnAMin")
-var buttonFMaj = document.getElementById("btnFMaj")
+var buttonFMaj = document.getElementById("btnFMaj")*/
 
 
 var intervalRef = 0
@@ -343,19 +356,19 @@ buttonPause.onclick = function () {
 buttonSpeedUp.onclick = function () {
      if(INTERVAL_UPDATE_MILIS > 50){
          setIntervalUpdateTime(INTERVAL_UPDATE_MILIS - 10 )
-document.getElementById("intervalInfo").innerHTML = "Interval Update Rate :" + INTERVAL_UPDATE_MILIS;
+//document.getElementById("intervalInfo").innerHTML = "Interval Update Rate :" + INTERVAL_UPDATE_MILIS;
 
      }
 
 }
 buttonSpeedDown.onclick = function () {
       setIntervalUpdateTime(INTERVAL_UPDATE_MILIS + 10 )
-document.getElementById("intervalInfo").innerHTML = "Interval Update Rate :" + INTERVAL_UPDATE_MILIS;
+//document.getElementById("intervalInfo").innerHTML = "Interval Update Rate :" + INTERVAL_UPDATE_MILIS;
 
 
 }
 
- 
+ /*
 buttonCMaj.onclick = function () {
     scale = generateNoteScale([step["d"], step["fsharp"], step["a"], step["csharp"]], 5)
 
@@ -367,7 +380,8 @@ buttonFMaj.onclick = function () {
 buttonAMin.onclick = function () {
     scale = generateNoteScale([step["e"], step["gsharp"], step["b"], step["fsharp"]], 6)
 }
+*/
 
 drawGrid();
 myContext.stroke();
-document.getElementById("intervalInfo").innerHTML = "Interval Update Rate :" + INTERVAL_UPDATE_MILIS;
+//document.getElementById("intervalInfo").innerHTML = "Interval Update Rate :" + INTERVAL_UPDATE_MILIS;
