@@ -1,5 +1,3 @@
-
-
 class Rectangle {
     constructor(cntxt, x, y) {
         this.context = cntxt
@@ -154,33 +152,31 @@ function gameOfLifeLoop() {
     myContext.stroke();
 }
 function generateNoteScale(baseSteps, octaves) {
-    //generates notes and octaves based on stuff
-    //starts from C0(16.35)
     let notes = []
     let baseNotes = []
     let allNotes = []
-    //this calculates first 12 notes with halfpitches and everyyhing
+
+    //this calculates first 12 notes with halfpitches and everything
     for (var i = 0; i < 12; i++) {
         notes.push(16.35 * Math.pow(Math.pow(2, 1 / 12), i))
     }
-    //var cmajBaseSteps = [0,2,4,5,7,9,11]
+
     //this removes pitches that are not in steps(scale)
     for (var i = 0; i < notes.length; i++) {
         if (baseSteps.includes(i)) {
             baseNotes.push(notes[i])
         }
     }
-    //this generates octaves from baseNotes
-    for (var i = 0; i < octaves; i++) {
-        for (var j = 0; j < baseSteps.length; j++) {
-            allNotes.push(baseNotes[j] * Math.pow(2, i + 1))
 
+    for (var i = 0; i < octaves; i++) {
+        for (var j = 0; j < baseNotes.length; j++) {
+            allNotes.push(baseNotes[j] * Math.pow(2, i))
         }
     }
-    console.log(allNotes)
-    return allNotes
 
+    return allNotes
 }
+
 function getNearestFromArray(input, array) {
     let delta = 0;
     let prevDelta = 0;
@@ -236,12 +232,26 @@ function setIntervalUpdateTime(milis){
 
 }
 
-var polySynth = new Tone.PolySynth(1000, Tone.Synth).toMaster();
-polySynth.volume.value = -15
+// var polySynth = new Tone.PolySynth(1000, Tone.Synth).toMaster();
+// polySynth.volume.value = -30
+
+
+var polySynth = new Tone.PolySynth(1000,Tone.Synth, {
+    "oscillator" : {
+      "type" : "triangle"
+    },
+    "envelope" : {
+      "attack" : 0.05 ,
+      "decay" : 0.9 ,
+      "sustain" : 0.3 ,
+      "release" : 1
+    }
+  }).toMaster();
+  polySynth.volume.value = -30
 
 var myCanvas = document.getElementById("canvas");
 var myContext = myCanvas.getContext("2d");
-var scale = generateNoteScale([0, 2, 4, 5, 7, 9, 11], 8)
+var scale = generateNoteScale([0,2,3,5,7,9,10], 10)
 
 myContext.canvas.height = window.innerHeight - window.innerHeight * 0.3
 //myContext.canvas.width = window.innerWidth - window.innerWidth * 0.4
@@ -340,8 +350,18 @@ var buttonFMaj = document.getElementById("btnFMaj")*/
 
 var intervalRef = 0
 var gameStarted = false;
+// document.querySelector('buttonStart').addEventListener('click', async () => {
+//     await Tone.start()
+//     console.log('audio is ready')
+// })
+
+document.documentElement.addEventListener('click', () => {
+    Tone.context.resume(); // or Tone.context.resume();
+})
 buttonStart.onclick = function () {
     if (!gameStarted) {
+        Tone.context.resume(); 
+        polySynth.Start
         intervalRef = setInterval(gameOfLifeLoop, INTERVAL_UPDATE_MILIS)
         console.log(intervalRef)
         gameStarted = true;
@@ -356,32 +376,18 @@ buttonPause.onclick = function () {
 buttonSpeedUp.onclick = function () {
      if(INTERVAL_UPDATE_MILIS > 50){
          setIntervalUpdateTime(INTERVAL_UPDATE_MILIS - 10 )
-//document.getElementById("intervalInfo").innerHTML = "Interval Update Rate :" + INTERVAL_UPDATE_MILIS;
 
      }
 
 }
 buttonSpeedDown.onclick = function () {
       setIntervalUpdateTime(INTERVAL_UPDATE_MILIS + 10 )
-//document.getElementById("intervalInfo").innerHTML = "Interval Update Rate :" + INTERVAL_UPDATE_MILIS;
 
 
 }
 
- /*
-buttonCMaj.onclick = function () {
-    scale = generateNoteScale([step["d"], step["fsharp"], step["a"], step["csharp"]], 5)
+var scaleSelect = document.getElementById('scaleSelect');
 
-}
-buttonFMaj.onclick = function () {
-    scale = generateNoteScale([step["b"], step["d"], step["fsharp"]], 8)
-
-}
-buttonAMin.onclick = function () {
-    scale = generateNoteScale([step["e"], step["gsharp"], step["b"], step["fsharp"]], 6)
-}
-*/
 
 drawGrid();
 myContext.stroke();
-//document.getElementById("intervalInfo").innerHTML = "Interval Update Rate :" + INTERVAL_UPDATE_MILIS;
